@@ -5,7 +5,7 @@ using ImageMagick;
 Console.Write("Enter the source directory path: ");
 var sourceDirectory = Console.ReadLine();
 Console.Write("Enter the target directory path: ");
-string? targetDirectory = Console.ReadLine();
+var targetDirectory = Console.ReadLine();
 
 if (!Directory.Exists(sourceDirectory))
 {
@@ -20,16 +20,16 @@ if (!Directory.Exists(targetDirectory))
 
 string[] allowedExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".heic" };
 
-string[] imageFiles = Directory.GetFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
+var imageFiles = Directory.GetFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
     .Where(file => allowedExtensions.Contains(Path.GetExtension(file).ToLower()))
     .ToArray();
 
-foreach (string filePath in imageFiles)
+foreach (var filePath in imageFiles)
 {
     try
     {
         DateTime dateTaken;
-        string fileExtension = Path.GetExtension(filePath).ToLower();
+        var fileExtension = Path.GetExtension(filePath).ToLower();
 
         if (fileExtension == ".heic")
         {
@@ -43,7 +43,7 @@ foreach (string filePath in imageFiles)
         var year = dateTaken.Year.ToString();
         var month = dateTaken.ToString("MMMM");
 
-        string yearMonthDirectory = Path.Combine(targetDirectory, year, month);
+        var yearMonthDirectory = Path.Combine(targetDirectory, year, month);
 
         if (!Directory.Exists(yearMonthDirectory))
         {
@@ -66,18 +66,14 @@ DateTime? GetDateTakenFromImage(string path)
 {
     try
     {
-        using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+        using var myImage = Image.FromStream(fs, false, false);
+        if (myImage.PropertyIdList.Contains(36867))
         {
-            using (var myImage = Image.FromStream(fs, false, false))
-            {
-                if (myImage.PropertyIdList.Contains(36867))
-                {
-                    PropertyItem? propItem = myImage.GetPropertyItem(36867);
-                    var dateTaken = System.Text.Encoding.UTF8.GetString(propItem.Value);
-                    dateTaken = dateTaken.Trim('\0');
-                    return DateTime.ParseExact(dateTaken, "yyyy:MM:dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
-                }
-            }
+            PropertyItem? propItem = myImage.GetPropertyItem(36867);
+            var dateTaken = System.Text.Encoding.UTF8.GetString(propItem.Value);
+            dateTaken = dateTaken.Trim('\0');
+            return DateTime.ParseExact(dateTaken, "yyyy:MM:dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
         }
     }
     catch (Exception ex)
