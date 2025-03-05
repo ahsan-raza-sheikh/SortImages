@@ -1,29 +1,36 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Drawing.Imaging;
 using ImageMagick;
 
+// Prompt the user to enter the source directory path
 Console.Write("Enter the source directory path: ");
 var sourceDirectory = Console.ReadLine();
+// Prompt the user to enter the target directory path
 Console.Write("Enter the target directory path: ");
 var targetDirectory = Console.ReadLine();
 
+// Check if the source directory exists
 if (!Directory.Exists(sourceDirectory))
 {
     Console.WriteLine("Source directory does not exist.");
     return;
 }
 
+// Check if the target directory exists, if not, create it
 if (!Directory.Exists(targetDirectory))
 {
     if (targetDirectory != null) _ = Directory.CreateDirectory(targetDirectory);
 }
 
+// Define allowed image file extensions
 string[] allowedExtensions = { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".heic" };
 
+// Get all image files from the source directory and subdirectories
 var imageFiles = Directory.GetFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
     .Where(file => allowedExtensions.Contains(Path.GetExtension(file).ToLower()))
     .ToArray();
 
+// Process each image file
 foreach (var filePath in imageFiles)
 {
     try
@@ -31,11 +38,12 @@ foreach (var filePath in imageFiles)
         DateTime dateTaken;
         var fileExtension = Path.GetExtension(filePath).ToLower();
 
+        // Get the date taken from HEIC files
         if (fileExtension == ".heic")
         {
             dateTaken = GetDateTakenFromHeic(filePath) ?? File.GetLastWriteTime(filePath);
         }
-        else
+        else // Get the date taken from other image files
         {
             dateTaken = GetDateTakenFromImage(filePath) ?? File.GetLastWriteTime(filePath);
         }
@@ -45,6 +53,7 @@ foreach (var filePath in imageFiles)
 
         var yearMonthDirectory = Path.Combine(targetDirectory, year, month);
 
+        // Create year/month directory if it doesn't exist
         if (!Directory.Exists(yearMonthDirectory))
         {
             Directory.CreateDirectory(yearMonthDirectory);
@@ -53,6 +62,7 @@ foreach (var filePath in imageFiles)
         var fileName = Path.GetFileName(filePath);
         var destinationPath = Path.Combine(yearMonthDirectory, fileName);
 
+        // Copy the file to the target directory
         File.Copy(filePath, destinationPath, true);
         Console.WriteLine($"Copied {fileName} to {yearMonthDirectory}");
     }
@@ -62,6 +72,7 @@ foreach (var filePath in imageFiles)
     }
 }
 
+// Function to get the date taken from an image file's EXIF data
 DateTime? GetDateTakenFromImage(string path)
 {
     try
@@ -83,6 +94,7 @@ DateTime? GetDateTakenFromImage(string path)
     return null;
 }
 
+// Function to get the date taken from a HEIC file's EXIF data
 DateTime? GetDateTakenFromHeic(string path)
 {
     try
